@@ -1,16 +1,17 @@
 package br.com.fiap.gitdash.github;
 
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class GitHubService {
@@ -29,11 +30,10 @@ public class GitHubService {
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         ResponseEntity<String> response = restTemplate.exchange(
-                "https://api.github.com/user/repos?sort=created&direction=desc\";",
+                "https://api.github.com/user/repos",
                 HttpMethod.GET,
                 entity,
-                String.class
-        );
+                String.class);
 
         List<RepositoryInfo> repoInfos = new ArrayList<>();
         try {
@@ -43,21 +43,6 @@ public class GitHubService {
                 RepositoryInfo repoInfo = new RepositoryInfo();
                 repoInfo.setName(repo.path("name").asText());
                 repoInfo.setDescription(repo.path("description").asText());
-
-                String commitsUrl = repo.path("commits_url").asText().replace("{/sha}", "");
-                ResponseEntity<String> commitsResponse = restTemplate.exchange(
-                        commitsUrl,
-                        HttpMethod.GET,
-                        entity,
-                        String.class
-                );
-
-                JsonNode commitsRoot = mapper.readTree(commitsResponse.getBody());
-                if (commitsRoot.isArray() && !commitsRoot.isEmpty()) {
-                    String lastCommitMessage = commitsRoot.get(0).path("commit").path("message").asText();
-                    repoInfo.setLastCommitMessage(lastCommitMessage);
-                    repoInfo.setCommitCount(commitsRoot.size());
-                }
 
                 repoInfos.add(repoInfo);
             }
